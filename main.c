@@ -28,6 +28,8 @@
  static volatile int i = 0;
  int16_t count_a = 0;
  char show_a[16];
+ int16_t distance_reading = 0;
+
 
  //for stepper motors
   unsigned char stepper_phases[8] = {0x01,0x03,0x02,0x06,0x04,0x0C,0x08,0x09};
@@ -109,7 +111,7 @@
 		 delay_ms(15);
 		 PORTD = (PORTD & 0xFE) | 0x00;
 		 count_a = pulse / 58;
-
+		 distance_reading = count_a;
 		 break;
 	 }
  }
@@ -238,19 +240,19 @@
 		 break;
 
 		 case stepper_WAIT:
-		 PORTA = stepper_phases[stepper_index];
+		 PORTB = (PORTB & 0xF0) | stepper_phases[stepper_index];
 		 break;
 
 		 case stepper_ON:
 		 if (stepper_index > 7){
 		 stepper_index = 0;
 		 }
-		 PORTA = stepper_phases[stepper_index];
+		 PORTB = (PORTB & 0xF0) | stepper_phases[stepper_index];
 		 stepper_index+= 1;
 		 break;
 
 		 case stepper_OFF:
-		 PORTA = stepper_phases[stepper_index];
+		 PORTB = (PORTB & 0xF0) | stepper_phases[stepper_index];
 		 break;
 
 	 }
@@ -272,8 +274,94 @@
 
 
 
+
+ enum dc_motor_STATES{dc_motor_START,dc_motor_INIT,dc_motor_WAIT,dc_motor_ON,dc_motor_OFF}dc_motor_state;
+
+ void dc_motor_init(){
+	 dc_motor_state = dc_motor_START;
+ }
+
+
+ void dc_motor_tick(){
+
+	 switch(dc_motor_state){//transitions
+		 case dc_motor_START:
+		 dc_motor_state = dc_motor_INIT;
+		 break;
+		 
+		 case dc_motor_INIT:
+		 dc_motor_state = dc_motor_WAIT;
+		 break;
+
+		 case dc_motor_WAIT:
+		 dc_motor_state = dc_motor_ON;
+		 break;
+
+		 case dc_motor_ON:
+		 dc_motor_state = dc_motor_ON;
+		 break;
+		 
+		 case dc_motor_OFF:
+		 dc_motor_state = dc_motor_WAIT;
+		 break;
+
+		 default:
+		 dc_motor_state = dc_motor_START;
+		 break;
+	 }
+	 switch(dc_motor_state){//actions
+		 case dc_motor_START:
+		 break;
+
+		 case dc_motor_INIT:
+		 break;
+
+		 //connect this to base of npn transistor
+		 case dc_motor_WAIT:
+		 PORTA = 0x01;
+		 break;
+
+		 case dc_motor_ON:
+		 break;
+
+		 case dc_motor_OFF:
+		 break;
+
+	 }
+ }
+
+ void dc_motor_task(){
+	 dc_motor_init();
+	 for(;;){
+		 dc_motor_tick();
+		 vTaskDelay(1);
+	 }
+ }
+
+
+
+ void StartSecPulse4(unsigned portBASE_TYPE Priority)
+ {
+	 xTaskCreate(dc_motor_task,(signed portCHAR *)"dc_motor_task",configMINIMAL_STACK_SIZE,NULL,Priority,NULL);
+ }
+
+
+
+
 int main(void)
 {
+//stepper
+PORTB = 0x0F;
+//sound sensors
+PORTD = 0x04;
+
+//dc motor and lcd
+PORTA = 0xFF;
+
+//lcd 
+PORTC = 0xFF;
+
+
 //StartSecPulse(1);
 StartSecPulse2(1);
 //StartSecPulse3(1);
