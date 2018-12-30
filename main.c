@@ -94,7 +94,7 @@
 
 		 default:
 		 sensor_state = sensor_START;
-		 
+	     break;		 
 	 }
 	 switch(sensor_state){ // actions
 		 case sensor_START:
@@ -134,65 +134,6 @@
  }
 
 
- enum LCD_STATES{LCD_START,LCD_INIT,LCD_SHOW}LCD_state;
-
- void LCD_init_state(){
-	 LCD_state = LCD_START;
- }
-
-
- void LCD_tick(){
-	 switch(LCD_state){//transitions
-		 case LCD_START:
-		 LCD_state = LCD_INIT;
-		 break;
-		 
-		 case LCD_INIT:
-		 LCD_state = LCD_SHOW;
-		 break;
-
-
-		 case LCD_SHOW:
-		 LCD_state = LCD_SHOW;
-		 break;
-
-		 default:
-		 LCD_state = LCD_START;
-		 
-	 }
-	 switch(LCD_state){ // actions
-		 case LCD_START:
-		 break;
-
-		 case LCD_INIT:
-		 LCD_init();
-		 
-		 break;
-
-		 case LCD_SHOW:
-		 LCD_ClearScreen();
-		 itoa(count_a,show_a,10);
-		 LCD_DisplayString(1,show_a);
-		 break;
-	 }
- }
-
- 
-
-
- void LCD_task(){
-	 LCD_init_state();
-	 for(;;){
-		 LCD_tick();
-		 vTaskDelay(500);
-	 }
- }
-
-
- void StartSecPulse3(unsigned portBASE_TYPE Priority)
- {
-	 xTaskCreate(LCD_task,(signed portCHAR *)"LCD_task",configMINIMAL_STACK_SIZE,NULL,Priority,NULL);
- }
 
 
 
@@ -272,6 +213,66 @@
 	 xTaskCreate(stepper_task,(signed portCHAR *)"stepper_task",configMINIMAL_STACK_SIZE,NULL,Priority,NULL);
 }
 
+ enum LCD_STATES{LCD_START,LCD_INIT,LCD_SHOW}LCD_state;
+
+ void LCD_init_state(){
+	 LCD_state = LCD_START;
+ }
+
+
+ void LCD_tick(){
+	 switch(LCD_state){//transitions
+		 case LCD_START:
+		 LCD_state = LCD_INIT;
+		 break;
+		 
+		 case LCD_INIT:
+		 LCD_state = LCD_SHOW;
+		 break;
+
+
+		 case LCD_SHOW:
+		 LCD_state = LCD_SHOW;
+		 break;
+
+		 default:
+		 LCD_state = LCD_START;
+		 break;
+	 }
+	 switch(LCD_state){ // actions
+		 case LCD_START:
+		 break;
+
+		 case LCD_INIT:
+		 LCD_init();
+		 
+		 break;
+
+		 case LCD_SHOW:
+		 LCD_ClearScreen();
+		 itoa(count_a,show_a,10);
+		 LCD_DisplayString(1,show_a);
+		 break;
+	 }
+ }
+
+ 
+
+
+ void LCD_task(){
+	 LCD_init_state();
+	 for(;;){
+		 LCD_tick();
+		 vTaskDelay(500);
+	 }
+ }
+
+
+ void StartSecPulse3(unsigned portBASE_TYPE Priority)
+ {
+	 xTaskCreate(LCD_task,(signed portCHAR *)"LCD_task",configMINIMAL_STACK_SIZE,NULL,Priority,NULL);
+ }
+
 
 
 
@@ -318,13 +319,15 @@
 
 		 //connect this to base of npn transistor
 		 case dc_motor_WAIT:
-		 PORTA = 0x01;
+		 PORTA = (PORTA & 0x7F) | 0x80;
 		 break;
 
 		 case dc_motor_ON:
+		 PORTA = (PORTA & 0x7F) | 0x80;
 		 break;
 
 		 case dc_motor_OFF:
+		 PORTA = (PORTA & 0x7F) | 0x00;
 		 break;
 
 	 }
