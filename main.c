@@ -27,7 +27,7 @@
  static volatile int pulse = 0;
  static volatile int i = 0;
  int16_t count_a = 0;
- char show_a[16];
+ char show_a[16] = "testing";
  int16_t distance_reading = 0;
 
 
@@ -47,7 +47,7 @@
 	 //        in Free Running Mode, a new conversion will trigger whenever
 	 //        the previous conversion completes.
  }
-
+ //this is for the sensors
  ISR(INT0_vect){
  if (i == 1){
 	TCCR1B = 0;
@@ -59,15 +59,11 @@
 	TCCR1B = 0x01;
 	i = 1;
  }
-
 }
 
 
 
  enum sensor_STATES{sensor_START,sensor_INIT,sensor_SENSE}sensor_state;
-
-
- 
 
  void sensor_init(){
 	 sensor_state = sensor_START;
@@ -76,13 +72,12 @@
 
  void sensor_tick(){
 
-	 switch(sensor_state){//transitions
+	 switch(sensor_state){//transitions		
 
-		
 		 case sensor_START:
 		 sensor_state = sensor_INIT;
 		 break;
-		 
+
 		 case sensor_INIT:
 		 sensor_state = sensor_SENSE;
 		 break;
@@ -95,18 +90,22 @@
 		 default:
 		 sensor_state = sensor_START;
 	     break;		 
+
 	 }
+
 	 switch(sensor_state){ // actions
 		 case sensor_START:
 		 break;
 
 		 case sensor_INIT:
+		 //enables the interuups
 		 //GICR |= 1<< INT0;
 		 EICRA = 0x01;
 		 //MCUCR |= 1<< ISC00;
 		 break;
 
 		 case sensor_SENSE:
+
 		 PORTD = (PORTD & 0xFE) | 0x01;
 		 delay_ms(15);
 		 PORTD = (PORTD & 0xFE) | 0x00;
@@ -245,7 +244,6 @@
 
 		 case LCD_INIT:
 		 LCD_init();
-		 
 		 break;
 
 		 case LCD_SHOW:
@@ -323,10 +321,12 @@
 		 break;
 
 		 case dc_motor_ON:
+		 //makes transistor allow current through
 		 PORTA = (PORTA & 0x7F) | 0x80;
 		 break;
 
 		 case dc_motor_OFF:
+		 //makes transistor not allow current through
 		 PORTA = (PORTA & 0x7F) | 0x00;
 		 break;
 
